@@ -351,7 +351,7 @@ def main():
     application.add_handler(CommandHandler("top", top_users, filters=allowed_chat))
 
     # Запуск самопингования
-    # application.create_task(self_ping())
+    application.create_task(self_ping())
 
     # Запуск бота
     application.run_polling()
