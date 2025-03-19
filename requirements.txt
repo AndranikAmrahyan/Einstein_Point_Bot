@@ -1,0 +1,6 @@
+# Требуемая версия SQLite (встроена в Python)
+# sqlite3>=3.35 (Python 3.10+)
+python-telegram-bot[ext]~=20.0
+Flask~=2.0
+aiohttp~=3.8
+python-dotenv~=1.0
