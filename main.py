@@ -37,7 +37,7 @@ logger.setLevel(logging.INFO)
 
 # Конфигурация
 class Config:
-    BOT_TOKEN = "7661688763:AAEnSe-yCu9Luo5lSk2Xsyf1lboPX78CgHg"  # os.getenv("BOT_TOKEN")
+    BOT_TOKEN = "7661688763:AAGAAiO_j3ryY9hNHUmPT8DPKPGFwLuUqqQ"  # os.getenv("BOT_TOKEN")
     RENDER_APP_URL = "https://einstein-point-bot.onrender.com"  # os.getenv("RENDER_APP_URL")
     DB_NAME = "points_bot.db"
     ALLOWED_CHAT_IDS = [-1002157100033, -1002439723121]
