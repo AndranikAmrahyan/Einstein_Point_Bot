@@ -38,7 +38,7 @@ logger.setLevel(logging.INFO)
 
 # Конфигурация
 class Config:
-    BOT_TOKEN = ""  # os.getenv("BOT_TOKEN")
+    BOT_TOKEN = "7661688763:AAGAAiO_j3ryY9hNHUmPT8DPKPGFwLuUqqQ"  # os.getenv("BOT_TOKEN")
     RENDER_APP_URL = "https://einstein-point-bot.onrender.com"  # os.getenv("RENDER_APP_URL")
     DB_NAME = "points_bot.db"
     BACKUP_CHAT_ID = -1002571801416  # ID чата для бэкапов(сохранении данных)
