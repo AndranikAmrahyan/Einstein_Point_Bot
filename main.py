@@ -41,7 +41,7 @@ class Config:
     RENDER_APP_URL = "https://einstein-point-bot.onrender.com"  # os.getenv("RENDER_APP_URL")
     DB_NAME = "points_bot.db"
     ALLOWED_CHAT_IDS = [-1002571801416, -1002157100033, -1002439723121]
-    MAIN_ALLOWED_CHAT = "@Family_Worlds"
+    MAIN_ALLOWED_CHAT = "@Family_Worlds"  # -1002157100033
     CREATOR = "tg://openmessage?user_id=5553779390"
     ALLOWED_ADMINS = {
         # Формат: {chat_id: [user_id1, user_id2, ...]}
