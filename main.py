@@ -40,7 +40,7 @@ class Config:
     BOT_TOKEN = "7661688763:AAGAAiO_j3ryY9hNHUmPT8DPKPGFwLuUqqQ"  # os.getenv("BOT_TOKEN")
     RENDER_APP_URL = "https://einstein-point-bot.onrender.com"  # os.getenv("RENDER_APP_URL")
     DB_NAME = "points_bot.db"
-    ALLOWED_CHAT_IDS = [-1002157100033, -1002439723121]
+    ALLOWED_CHAT_IDS = [-1002571801416, -1002157100033, -1002439723121]
     MAIN_ALLOWED_CHAT = "@Family_Worlds"
     CREATOR = "tg://openmessage?user_id=5553779390"
     ALLOWED_ADMINS = {
