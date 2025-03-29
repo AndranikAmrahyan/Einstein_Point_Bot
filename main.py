@@ -384,15 +384,15 @@ async def send_db_backup(context: ContextTypes.DEFAULT_TYPE):
 async def post_init(application):
     # Регистрируем периодический самопинг через job_queue
     application.job_queue.run_repeating(
-        self_ping, 
+        self_ping,
         interval=300,  # 5 минут
         first=10  # Первый пинг через 10 сек после старта
     )
     
-    # Ежедневный бэкап(сохранение данных) в 12:00 UTC
+    # Ежедневный бэкап(сохранение данных) в 21:00 UTC
     application.job_queue.run_daily(
         send_db_backup,
-        time=datetime.time(hour=12, minute=0, tzinfo=datetime.timezone.utc),
+        time=datetime.time(hour=21, minute=0, tzinfo=datetime.timezone.utc),
         days=(0, 1, 2, 3, 4, 5, 6),
         name="daily_db_backup"
     )
