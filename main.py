@@ -42,7 +42,7 @@ class Config:
     RENDER_APP_URL = "https://einstein-point-bot-7k8m.onrender.com"  # os.getenv("RENDER_APP_URL")
     DB_NAME = "points_bot.db"
     BACKUP_CHAT_ID = -1002571801416  # ID чата для бэкапов(сохранении данных)
-    ALLOWED_CHAT_IDS = [BACKUP_CHAT_ID, -1002157100033, -1002439723121]
+    ALLOWED_CHAT_IDS = [BACKUP_CHAT_ID, -1002157100033, -1002439723121, -1002360703009]
     MAIN_ALLOWED_CHAT = "@Family_Worlds"  # -1002157100033
     CREATOR = "tg://openmessage?user_id=5553779390"
     ALLOWED_ADMINS = {
