@@ -38,7 +38,7 @@ logger.setLevel(logging.INFO)
 
 # Конфигурация
 class Config:
-    BOT_TOKEN = "7661688763:AAFNXb60CAYHiap5Iv8M_5WMMbN47cAt32A"  # os.getenv("BOT_TOKEN")
+    BOT_TOKEN = "7661688763:AAFtW-Mq3ssiebdzHNqV6ckhJQI25ZQDQeQ"  # os.getenv("BOT_TOKEN")
     RENDER_APP_URL = "https://einstein-point-bot-7k8m.onrender.com"  # os.getenv("RENDER_APP_URL")
     DB_NAME = "points_bot.db"
     BACKUP_CHAT_ID = -1002571801416  # ID чата для бэкапов(сохранении данных)
@@ -107,10 +107,10 @@ def update_user_points(user_id: int, chat_id: int, delta: int, username: str):
 def get_top_users(chat_id: int, limit: int = 10):
     conn = sqlite3.connect(Config.DB_NAME)
     c = conn.cursor()
-    c.execute('''SELECT username, points 
+    c.execute('''SELECT user_id, username, points 
                  FROM users 
                  WHERE chat_id=?
-                 GROUP BY user_id  -- Группируем по пользователю
+                 GROUP BY user_id
                  ORDER BY points DESC 
                  LIMIT ?''', (chat_id, limit))
     result = c.fetchall()
@@ -176,11 +176,11 @@ async def modify_points(update: Update, context: ContextTypes.DEFAULT_TYPE, oper
             username=target_user.username or target_user.full_name
         )
         
-        user_link = f"[{escape_markdown(target_user.full_name, version=2)}](tg://openmessage?user_id={target_user.id})"
+        user_link = target_user.mention_markdown()
         await update.message.reply_text(
             f"✅ Пользователю {user_link} "
             f"{'добавлено' if operation == 'add' else 'снято'} {abs(points)} баллов",
-            parse_mode="MarkdownV2"
+            parse_mode="Markdown"
         )
 
     except ValueError as e:
@@ -293,10 +293,15 @@ async def top_users(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("📊 Рейтинг пока пуст")
         return
         
-    response = f"🏆 Топ {limit} пользователей:\n" + "\n".join(
-        [f"{i+1}. {user[0]} - {user[1]} баллов" for i, user in enumerate(top)]
-    )
-    await update.message.reply_text(response)
+    response = f"🏆 Топ {limit} пользователей:\n"
+    lines = []
+    for index, (user_id, username, points) in enumerate(top):
+        escaped_username = escape_markdown(username, version=2)
+        user_link = f"[{escaped_username}](tg://user?id={user_id})"
+        lines.append(f"{index + 1}. {user_link} - {points} баллов")
+    
+    response += "\n".join(lines)
+    await update.message.reply_text(response, parse_mode="MarkdownV2")
     
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Экранируем все специальные символы
