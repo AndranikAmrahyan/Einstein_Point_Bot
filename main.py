@@ -312,7 +312,7 @@ async def top_users(update: Update, context: ContextTypes.DEFAULT_TYPE):
             mention = f"Пользователь {user_id}"
         
         # Экранируем точку после номера
-        lines.append(f"{index + 1}\\. {mention} - *{points}* баллов")
+        lines.append(f"{index + 1}. {mention} - *{points}* баллов")
 
     response += "\n".join(lines)
     await update.message.reply_text(response, parse_mode="Markdown")
