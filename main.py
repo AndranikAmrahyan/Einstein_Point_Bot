@@ -38,7 +38,7 @@ logger.setLevel(logging.INFO)
 
 # Конфигурация
 class Config:
-    BOT_TOKEN = "7661688763:AAFtW-Mq3ssiebdzHNqV6ckhJQI25ZQDQeQ"  # os.getenv("BOT_TOKEN")
+    BOT_TOKEN = "7661688763:AAGussjvIyojjvwKLZbYjFKuVt_oCRKT-zs"  # os.getenv("BOT_TOKEN")
     RENDER_APP_URL = "https://einstein-point-bot-7k8m.onrender.com"  # os.getenv("RENDER_APP_URL")
     DB_NAME = "points_bot.db"
     BACKUP_CHAT_ID = -1002571801416  # ID чата для бэкапов(сохранении данных)
@@ -89,17 +89,16 @@ def get_user_points(user_id: int, chat_id: int) -> int:
     conn.close()
     return result[0] if result else 0
 
-def update_user_points(user_id: int, chat_id: int, delta: int, username: str):
+def update_user_points(user_id: int, chat_id: int, delta: int, username: str, full_name: str):
     conn = sqlite3.connect(Config.DB_NAME)
     c = conn.cursor()
     
-    # Обновляем существующую запись или создаем новую
     c.execute('''INSERT OR REPLACE INTO users 
-                 (user_id, chat_id, points, username)
+                 (user_id, chat_id, points, username, full_name)
                  VALUES (?, ?, 
                      COALESCE((SELECT points FROM users WHERE user_id=? AND chat_id=?), 0) + ?, 
-                     ?)''',
-                 (user_id, chat_id, user_id, chat_id, delta, username))
+                     ?, ?)''',
+                 (user_id, chat_id, user_id, chat_id, delta, username, full_name))
     
     conn.commit()
     conn.close()
@@ -107,7 +106,7 @@ def update_user_points(user_id: int, chat_id: int, delta: int, username: str):
 def get_top_users(chat_id: int, limit: int = 10):
     conn = sqlite3.connect(Config.DB_NAME)
     c = conn.cursor()
-    c.execute('''SELECT user_id, username, points 
+    c.execute('''SELECT user_id, username, full_name, points 
                  FROM users 
                  WHERE chat_id=?
                  GROUP BY user_id
@@ -148,7 +147,8 @@ async def modify_points(update: Update, context: ContextTypes.DEFAULT_TYPE, oper
                 user_id=target_user.id,
                 chat_id=update.effective_chat.id,
                 delta=0,
-                username=target_user.username or target_user.full_name
+                username=target_user.username or "",
+                full_name=target_user.full_name
             )
         else:
             if len(context.args) < 2:
@@ -173,7 +173,8 @@ async def modify_points(update: Update, context: ContextTypes.DEFAULT_TYPE, oper
             user_id=target_user.id,
             chat_id=update.effective_chat.id,
             delta=final_points,
-            username=target_user.username or target_user.full_name
+            username=target_user.username or "",
+            full_name=target_user.full_name
         )
         
         user_link = target_user.mention_markdown()
@@ -295,13 +296,21 @@ async def top_users(update: Update, context: ContextTypes.DEFAULT_TYPE):
         
     response = f"🏆 Топ {limit} пользователей:\n"
     lines = []
-    for index, (user_id, username, points) in enumerate(top):
-        escaped_username = escape_markdown(username, version=2)
-        user_link = f"[{escaped_username}](tg://user?id={user_id})"
-        lines.append(f"{index + 1}. {user_link} - {points} баллов")
     
+    for index, (user_id, username, full_name, points) in enumerate(top):
+        try:
+            # Получаем объект пользователя
+            user = await context.bot.get_chat_member(update.effective_chat.id, user_id)
+            mention = user.user.mention_markdown()
+        except Exception:
+            # Если не удалось получить пользователя, используем сохраненное имя
+            mention = f"[{escape_markdown(full_name, version=1)}](tg://openmessage?user_id={user_id})"
+        
+        # Экранируем точку после номера
+        lines.append(f"{index + 1}\\. {mention} - *{points}* баллов")
+
     response += "\n".join(lines)
-    await update.message.reply_text(response, parse_mode="MarkdownV2")
+    await update.message.reply_text(response, parse_mode="Markdown")
     
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Экранируем все специальные символы
