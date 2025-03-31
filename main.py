@@ -38,7 +38,7 @@ logger.setLevel(logging.INFO)
 
 # Конфигурация
 class Config:
-    BOT_TOKEN = "7661688763:AAEFbbda9WgXfqSIpL26v2PL5gXKSRFfWEk"  # os.getenv("BOT_TOKEN")
+    BOT_TOKEN = "7661688763:AAFNXb60CAYHiap5Iv8M_5WMMbN47cAt32A"  # os.getenv("BOT_TOKEN")
     RENDER_APP_URL = "https://einstein-point-bot-7k8m.onrender.com"  # os.getenv("RENDER_APP_URL")
     DB_NAME = "points_bot.db"
     BACKUP_CHAT_ID = -1002571801416  # ID чата для бэкапов(сохранении данных)
@@ -176,9 +176,11 @@ async def modify_points(update: Update, context: ContextTypes.DEFAULT_TYPE, oper
             username=target_user.username or target_user.full_name
         )
         
+        user_link = f"[{escape_markdown(target_user.full_name, version=2)}](tg://openmessage?user_id={target_user.id})"
         await update.message.reply_text(
-            f"✅ Пользователю @{target_user.username or target_user.full_name} "
-            f"{'добавлено' if operation == 'add' else 'снято'} {abs(points)} баллов"
+            f"✅ Пользователю {user_link} "
+            f"{'добавлено' if operation == 'add' else 'снято'} {abs(points)} баллов",
+            parse_mode="MarkdownV2"
         )
 
     except ValueError as e:
