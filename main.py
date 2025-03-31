@@ -38,7 +38,7 @@ logger.setLevel(logging.INFO)
 
 # Конфигурация
 class Config:
-    BOT_TOKEN = "7661688763:AAGussjvIyojjvwKLZbYjFKuVt_oCRKT-zs"  # os.getenv("BOT_TOKEN")
+    BOT_TOKEN = "7661688763:AAHujUCFW7OyBihoCd7x87BYTc9q5nddPXQ"  # os.getenv("BOT_TOKEN")
     RENDER_APP_URL = "https://einstein-point-bot-7k8m.onrender.com"  # os.getenv("RENDER_APP_URL")
     DB_NAME = "points_bot.db"
     BACKUP_CHAT_ID = -1002571801416  # ID чата для бэкапов(сохранении данных)
@@ -74,6 +74,7 @@ def init_db():
                   chat_id INTEGER, 
                   points INTEGER, 
                   username TEXT,
+                  full_name TEXT,
                   UNIQUE(user_id, chat_id))''')  # Добавлен уникальный индекс
     conn.commit()
     conn.close()
@@ -304,7 +305,8 @@ async def top_users(update: Update, context: ContextTypes.DEFAULT_TYPE):
             mention = user.user.mention_markdown()
         except Exception:
             # Если не удалось получить пользователя, используем сохраненное имя
-            mention = f"[{escape_markdown(full_name, version=1)}](tg://openmessage?user_id={user_id})"
+            name_to_show = full_name or username or f"Пользователь {user_id}"
+            mention = f"[{escape_markdown(name_to_show, version=1)}](tg://openmessage?user_id={user_id})"
         
         # Экранируем точку после номера
         lines.append(f"{index + 1}\\. {mention} - *{points}* баллов")
