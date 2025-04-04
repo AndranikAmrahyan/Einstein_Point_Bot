@@ -38,7 +38,7 @@ logger.setLevel(logging.INFO)
 
 # Конфигурация
 class Config:
-    BOT_TOKEN = "7661688763:AAG45_lHlXTV5mAz3rirPo_5ZDIAvMCcSkE"  # os.getenv("BOT_TOKEN")
+    BOT_TOKEN = "7661688763:AAGPldiIfLoMFDX64d318jaYLtBfI78Q9Vg"  # os.getenv("BOT_TOKEN")
     RENDER_APP_URL = "https://einstein-point-bot-7k8m.onrender.com"  # os.getenv("RENDER_APP_URL")
     DB_NAME = "points_bot.db"
     BACKUP_CHAT_ID = -1002571801416  # ID чата для бэкапов(сохранении данных)
@@ -303,18 +303,27 @@ async def top_users(update: Update, context: ContextTypes.DEFAULT_TYPE):
             # Получаем объект пользователя
             user = await context.bot.get_chat_member(update.effective_chat.id, user_id)
             # mention = user.user.mention_markdown()
-            name = escape_markdown(user.user.full_name, version=1)
+            name = escape_markdown(user.user.full_name, version=2)  # version=1
             mention = f"[{name}](tg://user?id={user.user.id})"
         except BadRequest:
             # Если не удалось получить пользователя, используем сохраненное имя
             name_to_show = full_name or username or f"Пользователь {user_id}"
-            mention = f"[{escape_markdown(name_to_show, version=1)}](tg://user?id={user_id})"  # (tg://openmessage?user_id={user_id})
+            mention = f"[{escape_markdown(name_to_show, version=2)}](tg://user?id={user_id})"  # version=1 # (tg://openmessage?user_id={user_id})
         except Exception as e:
             logger.error(f"Ошибка при получении пользователя в top_users: {e}")
             mention = f"[Пользователь {user_id}](tg://user?id={user_id})"
         
-        # Экранируем точку после номера
-        lines.append(f"{index + 1}\\. {mention} - *{points}* баллов")  # lines.append(f"{index + 1}. {mention} - *{points}* баллов")
+        # Экранируем все спецсимволы
+        
+        escaped_points = escape_markdown(str(points), version=2)
+        
+        # lines.append(f"{index + 1}. {mention} - *{points}* баллов")
+        line = (
+            f"{index + 1}\\. "  # Экранированная точка
+            f"{mention} \\- "   # Экранированный дефис
+            f"*{escaped_points}* баллов"  # Экранированные баллы
+        )
+        lines.append(line)
 
     response += "\n".join(lines)
     await update.message.reply_text(response, parse_mode="MarkdownV2")  # Markdown
