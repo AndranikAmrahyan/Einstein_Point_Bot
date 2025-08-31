@@ -41,14 +41,14 @@ class Config:
     BOT_TOKEN = "7661688763:AAFxH41NgyQh5vsyPOmulHmbY8_JoRrajSk"  # os.getenv("BOT_TOKEN")
     RENDER_APP_URL = "https://einstein-point-bot-7k8m.onrender.com"  # os.getenv("RENDER_APP_URL")
     DB_NAME = "points_bot.db"
-    BACKUP_CHAT_ID = -1002571801416  # ID чата для бэкапов(сохранении данных)
-    ALLOWED_CHAT_IDS = [BACKUP_CHAT_ID, -1002157100033, -1002439723121, -1002360703009]
+    BACKUP_CHAT_ID = -1002571801416  # ID чата для бэкапов(сохранении данных) https://t.me/+Axwm80ZCBSc3NjQy
+    ALLOWED_CHAT_IDS = [BACKUP_CHAT_ID, -1002157100033, -1002439723121]
     MAIN_ALLOWED_CHAT = "@Family_Worlds"  # -1002157100033
     CREATOR = "tg://openmessage?user_id=5553779390"
     ALLOWED_ADMINS = {
         # Формат: {chat_id: [user_id1, user_id2, ...]}
-        -1002157100033: [5553779390, 1057267401, 5518327998, 5810301439],
-        -1002439723121: [5553779390]
+        -1002157100033: [5553779390, 1057267401, 2085350493, 1911958747, 5518327998],  # https://t.me/Family_Worlds
+        -1002439723121: [5553779390]  # https://t.me/Einstein_bot_test_2
     }
 
 # Инициализация Flask
@@ -475,3 +475,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
