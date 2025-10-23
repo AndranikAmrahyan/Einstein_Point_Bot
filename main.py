@@ -38,7 +38,7 @@ logger.setLevel(logging.INFO)
 
 # Конфигурация
 class Config:
-    BOT_TOKEN = "7661688763:AAF5a2vBTVgKT2aNSeA7NoMoaNFS7zMAUhk"  # os.getenv("BOT_TOKEN")
+    BOT_TOKEN = "7661688763:AAEk911JxnrHRQ_l9UgAp3AhHl9YyDVxiWU"  # os.getenv("BOT_TOKEN")
     RENDER_APP_URL = "https://einstein-point-bot-7k8m.onrender.com"  # os.getenv("RENDER_APP_URL")
     DB_NAME = "points_bot.db"
     BACKUP_CHAT_ID = -1002571801416  # ID чата для бэкапов(сохранении данных) https://t.me/+Axwm80ZCBSc3NjQy
@@ -417,7 +417,7 @@ async def post_init(application):
     # Регистрируем периодический самопинг через job_queue
     application.job_queue.run_repeating(
         self_ping,
-        interval=300,  # 5 минут
+        interval=180,  # 3 минут
         first=10  # Первый пинг через 10 сек после старта
     )
     
@@ -475,6 +475,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
