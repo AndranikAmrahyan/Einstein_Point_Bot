@@ -38,8 +38,8 @@ logger.setLevel(logging.INFO)
 
 # Конфигурация
 class Config:
-    BOT_TOKEN = "7487925725:AAHzJyVWRG2fklT0hQvaXrq-Cawq9vzomEQ"  # os.getenv("BOT_TOKEN")
-    RENDER_APP_URL = "https://einstein-point-bot.onrender.com"  # os.getenv("RENDER_APP_URL")
+    BOT_TOKEN = "7661688763:AAEk911JxnrHRQ_l9UgAp3AhHl9YyDVxiWU"  # os.getenv("BOT_TOKEN")
+    RENDER_APP_URL = "https://einstein-point-bot-7k8m.onrender.com"  # os.getenv("RENDER_APP_URL")
     DB_NAME = "points_bot.db"
     BACKUP_CHAT_ID = -1002571801416  # ID чата для бэкапов(сохранении данных) https://t.me/+Axwm80ZCBSc3NjQy
     ALLOWED_CHAT_IDS = [BACKUP_CHAT_ID, -1002157100033, -1002439723121]
@@ -609,4 +609,5 @@ def main():
             application.stop()
 
 if __name__ == "__main__":
+
     main()
