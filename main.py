@@ -44,7 +44,7 @@ class Config:
     BACKUP_CHAT_ID = -1002571801416  # ID чата для бэкапов(сохранении данных) https://t.me/+Axwm80ZCBSc3NjQy
     ALLOWED_CHAT_IDS = [BACKUP_CHAT_ID, -1002157100033, -1002439723121]
     MAIN_ALLOWED_CHAT = "@Family_Worlds"  # -1002157100033
-    CREATOR = "tg://openmessage?user_id=5553779390"
+    CREATOR = "@andranik_amrahyan"
     ALLOWED_ADMINS = {
         # Формат: {chat_id: [user_id1, user_id2, ...]}
         -1002157100033: [5553779390, 1057267401, 2085350493, 1911958747, 5518327998],  # https://t.me/Family_Worlds
@@ -631,4 +631,5 @@ def main():
             asyncio.run(shutdown())
 
 if __name__ == "__main__":
+
     main()
