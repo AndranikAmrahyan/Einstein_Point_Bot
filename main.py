@@ -503,8 +503,8 @@ async def handle_new_chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await context.bot.send_message(
                 chat_id=chat_id,
                 text=(
-                    f"🚫 Бот создан специально для чата {Config.MAIN_ALLOWED_CHAT}\n"
-                    f"Бота создал: {Config.CREATOR}"
+                    f"🚫 Бот доступен только для разрешенных чатов.\n"
+                    f"Для получения бота свяжитесь с {Config.CREATOR}"
                 )
             )
             await context.bot.leave_chat(chat_id)
@@ -633,3 +633,4 @@ def main():
 if __name__ == "__main__":
 
     main()
+
