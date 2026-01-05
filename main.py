@@ -668,6 +668,30 @@ async def reject_unauthorized_command(update: Update, context: ContextTypes.DEFA
 
 # --------- GIVEAWAY: Conversation & Interaction ---------
 
+# Helper to generate organizers keyboard
+def get_organizers_keyboard(show_me_btn=True):
+    buttons = [
+        [KeyboardButton(
+            text="👤 Выбрать организатора",
+            request_users=KeyboardButtonRequestUsers(
+                request_id=2, 
+                user_is_bot=False, 
+                user_is_premium=None
+                # max_quantity не указываем, по умолчанию 1 -> открывает обычный выбор контакта
+            )
+        )]
+    ]
+    
+    row2 = []
+    if show_me_btn:
+        row2.append(KeyboardButton(text="Выбрать себя"))
+    
+    row2.append(KeyboardButton(text="✅ Готово / Далее"))
+    buttons.append(row2)
+    buttons.append([KeyboardButton(text="Отменить")])
+    
+    return ReplyKeyboardMarkup(buttons, resize_keyboard=True)
+
 async def create_giveaway(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Команда должна приходить в личном чате
     if update.effective_chat.type != 'private':
@@ -738,30 +762,20 @@ async def handle_chat_shared(update: Update, context: ContextTypes.DEFAULT_TYPE)
             return
 
         # Сохраняем чат и переходим к выбору организаторов
-        giveaways_in_progress[user_id].update({'chat_id': shared_chat_id, 'step': 'ask_organizers'})
-
-        # Создаем клавиатуру для выбора пользователей (User Selection)
-        request_users_btn = KeyboardButton(
-            text="👤 Выбрать организаторов",
-            request_users=KeyboardButtonRequestUsers(
-                request_id=2, 
-                user_is_bot=False, 
-                user_is_premium=None, 
-                max_quantity=10
-            )
-        )
-        me_btn = KeyboardButton(text="Только я")
-        cancel_btn = KeyboardButton(text="Отменить")
-        
-        markup = ReplyKeyboardMarkup([[request_users_btn], [me_btn, cancel_btn]], resize_keyboard=True, one_time_keyboard=True)
+        giveaways_in_progress[user_id].update({
+            'chat_id': shared_chat_id, 
+            'step': 'ask_organizers',
+            'temp_organizers': [],  # Список для накопления имен (текст)
+            'organizer_ids': set()  # Set для проверки дубликатов по ID
+        })
 
         await update.message.reply_text(
             "✅ Чат выбран.\n\n"
             "Теперь укажите организаторов.\n"
-            "Нажмите **«Выбрать организаторов»**, чтобы выбрать людей из списка контактов или чатов,\n"
-            "или нажмите **«Только я»**, чтобы организатором были только вы.",
-            reply_markup=markup,
-            parse_mode="Markdown"
+            "Вы можете выбирать их по одному из списка пользователей, добавить себя или ввести имя вручную (просто отправьте текст).\n"
+            "Когда закончите, нажмите <b>«✅ Готово / Далее»</b>.",
+            reply_markup=get_organizers_keyboard(),
+            parse_mode="HTML"
         )
         return
 
@@ -868,84 +882,58 @@ def get_conditions_keyboard():
     return ReplyKeyboardMarkup([[btn_channel, btn_group], [btn_done, btn_cancel]], resize_keyboard=True)
 
 async def handle_users_shared(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Обработчик получения пользователей (после нажатия кнопки request_users)"""
+    """Обработчик получения пользователя (после нажатия кнопки request_users)"""
     user_id = update.effective_user.id
     state = giveaways_in_progress.get(user_id)
     
     if not state or state.get('step') != 'ask_organizers':
         return
 
+    # Теперь мы получаем список, но так как max_quantity=1 (по умолчанию), там будет один юзер
     shared_users = update.message.users_shared.users
+    if not shared_users:
+        return
+
+    shared_user = shared_users[0]
+    uid = shared_user.user_id
     
-    valid_names = []
-    failed_users = []
-    
-    # 4) Обработка ошибок при получении пользователей
-    for shared_user in shared_users:
-        uid = shared_user.user_id
-        try:
-            # Пытаемся получить информацию
-            chat_info = await context.bot.get_chat(uid)
-            full_name = chat_info.full_name or chat_info.title or f"User {uid}"
-            # 1) Оборачиваем имя в <code>
-            valid_names.append(f"<code>{escape_html(full_name)}</code>")
-        except Exception as e:
-            logger.warning(f"Could not fetch info for user {uid}: {e}")
-            failed_users.append(uid)
-
-    # Если есть ошибки - включаем режим ручного ввода/исправления
-    if failed_users:
-        # Сохраняем уже полученные имена во временный список
-        state['temp_organizers'] = valid_names
-        state['step'] = 'manual_organizer_entry'
-        
+    # Проверка на дубликаты
+    if uid in state['organizer_ids']:
         await update.message.reply_text(
-            f"⚠️ Не удалось получить данные для {len(failed_users)} пользователей.\n"
-            "Возможно, они не запускали этого бота.\n"
-            "Пусть они отправят команду /start боту и вы попробуете снова, либо вы можете ввести их имена вручную далее."
-        )
-
-        current_orgs_str = ", ".join(valid_names) if valid_names else "(пока нет)"
-        
-        kb = ReplyKeyboardMarkup([
-            [KeyboardButton("✅ Готово / Далее")],
-            [KeyboardButton("Отменить")]
-        ], resize_keyboard=True)
-
-        await update.message.reply_text(
-            f"Выбраны организаторы: {current_orgs_str}\n\n"
-            "Введите имена недостающих организаторов вручную (одним сообщением через запятую, например: <code>Иван</code>, <code>Петр</code>) или нажмите «Готово», если список завершен.",
-            parse_mode='HTML',
-            reply_markup=kb
+            "⚠️ Этот пользователь уже добавлен в список организаторов.",
+            reply_markup=get_organizers_keyboard(show_me_btn=(user_id not in state['organizer_ids']))
         )
         return
 
-    # Если ошибок нет и есть валидные имена - переходим сразу к условиям (как раньше)
-    if valid_names:
-        organizers_text = ", ".join(valid_names)
-        state['organizers_text'] = organizers_text
-        state['step'] = 'ask_conditions'
-        state['condition_chats'] = [] # Список объектов {id, title, link}
+    try:
+        # Пытаемся получить информацию
+        chat_info = await context.bot.get_chat(uid)
+        full_name = chat_info.full_name or chat_info.title or f"User {uid}"
         
-        msg_text = (
-            f"Выбраны организаторы: {organizers_text}\n\n"
-            "Теперь укажите чаты/каналы, в которых должен состоять участник.\n"
-            "Используйте кнопки ниже для добавления.\n\n"
-            "<b>Текущий список условий:</b>\n"
-            "• Состоять в чате розыгрыша"
-        )
-
+        # Сохраняем
+        state['organizer_ids'].add(uid)
+        formatted_name = f"<code>{escape_html(full_name)}</code>"
+        state['temp_organizers'].append(formatted_name)
+        
+        current_list_str = ", ".join(state['temp_organizers'])
+        
         await update.message.reply_text(
-            msg_text,
+            f"✅ Организатор {formatted_name} добавлен.\n"
+            f"Текущий список: {current_list_str}\n\n"
+            "Выберите следующего, введите имя вручную или нажмите «Готово / Далее».",
             parse_mode="HTML",
-            reply_markup=get_conditions_keyboard()
+            reply_markup=get_organizers_keyboard(show_me_btn=(user_id not in state['organizer_ids']))
         )
-        return
 
-    # Если никого не удалось добавить (все failed)
-    if not valid_names and not failed_users:
-         # Странный кейс, но на всякий случай
-         await update.message.reply_text("Не выбрано ни одного пользователя.")
+    except Exception as e:
+        logger.warning(f"Could not fetch info for user {uid}: {e}")
+        # Ошибка получения данных
+        await update.message.reply_text(
+            "⚠️ Не удалось получить данные для пользователя.\n"
+            "Возможно, он не запускал этого бота.\n"
+            "Пусть он отправит команду /start боту и вы попробуете снова, либо вы можете ввести имя вручную.",
+            reply_markup=get_organizers_keyboard(show_me_btn=(user_id not in state['organizer_ids']))
+        )
 
 async def cancel_giveaway(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # отмена процесса создания (личный чат)
@@ -1178,87 +1166,87 @@ async def handle_giveaway_text_response(update: Update, context: ContextTypes.DE
     state = giveaways_in_progress.get(user_id)
     if not state:
         # Если пришел текст, но состояния нет - возможно нужно удалить клавиатуру если она зависла
-        if text in ["Отменить", "Только я", "✅ Готово / Далее"]:
+        if text in ["Отменить", "Выбрать себя", "✅ Готово / Далее"]:
              await update.message.reply_text("Нет активного действия.", reply_markup=ReplyKeyboardRemove())
         return
 
     step = state.get('step')
 
-    # Шаг выбора организатора (если пользователь выбрал "Только я" или ввел текст вручную вместо кнопки)
+    # Шаг выбора организатора (накопление списка)
     if step == 'ask_organizers':
-        if text == "Только я" or text == ".":
-            # Используем данные самого пользователя
-            name = f"<code>{escape_html(update.effective_user.full_name)}</code>"
-            state['organizers_text'] = name
-        else:
-            # Ручной ввод - тоже оборачиваем в <code>
-            # Предполагаем, что пользователь может ввести "Name1, Name2"
-            # Разбиваем и форматируем каждый
-            raw_names = [n.strip() for n in text.split(',')]
-            formatted_names = [f"<code>{escape_html(n)}</code>" for n in raw_names if n]
-            state['organizers_text'] = ", ".join(formatted_names)
         
-        state['step'] = 'ask_conditions'
-        state['condition_chats'] = []
-        
-        msg = (
-            "Теперь укажите чаты/каналы, в которых должен состоять участник.\n"
-            "Используйте кнопки ниже для добавления.\n\n"
-            "<b>Текущий список условий:</b>\n"
-            "• Состоять в чате розыгрыша"
-        )
-        await update.message.reply_text(
-            msg,
-            parse_mode="HTML",
-            reply_markup=get_conditions_keyboard()
-        )
-        return
-
-    # Добавление организаторов вручную после ошибки получения данных
-    if step == 'manual_organizer_entry':
+        # 1. Завершение выбора
         if text == "✅ Готово / Далее":
-            # Собираем итоговый список
-            org_list = state.get('temp_organizers', [])
-            if not org_list:
-                await update.message.reply_text("Список организаторов пуст. Введите хотя бы одно имя или нажмите Отменить.")
+            if not state['temp_organizers']:
+                await update.message.reply_text(
+                    "Список организаторов пуст. Выберите хотя бы одного организатора или добавьте себя.",
+                    reply_markup=get_organizers_keyboard(show_me_btn=(user_id not in state['organizer_ids']))
+                )
                 return
             
-            organizers_text = ", ".join(org_list)
-            state['organizers_text'] = organizers_text
+            # Сохраняем итоговый текст и переходим дальше
+            state['organizers_text'] = ", ".join(state['temp_organizers'])
             
-            # Переход к условиям
             state['step'] = 'ask_conditions'
             state['condition_chats'] = []
             
-            msg_text = (
-                f"Выбраны организаторы: {organizers_text}\n\n"
+            msg = (
+                f"Выбраны организаторы: {state['organizers_text']}\n\n"
                 "Теперь укажите чаты/каналы, в которых должен состоять участник.\n"
                 "Используйте кнопки ниже для добавления.\n\n"
                 "<b>Текущий список условий:</b>\n"
                 "• Состоять в чате розыгрыша"
             )
-
             await update.message.reply_text(
-                msg_text,
+                msg,
                 parse_mode="HTML",
                 reply_markup=get_conditions_keyboard()
             )
-        else:
-            # Ручной ввод имен
-            raw_names = [n.strip() for n in text.split(',')]
-            formatted_names = [f"<code>{escape_html(n)}</code>" for n in raw_names if n]
+            return
+
+        # 2. Выбрать себя
+        if text == "Выбрать себя":
+            if user_id in state['organizer_ids']:
+                await update.message.reply_text("Вы уже добавлены.", reply_markup=get_organizers_keyboard(show_me_btn=False))
+                return
+                
+            name = f"<code>{escape_html(update.effective_user.full_name)}</code>"
+            state['organizer_ids'].add(user_id)
+            state['temp_organizers'].append(name)
             
-            current_list = state.get('temp_organizers', [])
-            current_list.extend(formatted_names)
-            state['temp_organizers'] = current_list
-            
-            # Показываем обновленный список
-            current_orgs_str = ", ".join(current_list)
+            current_list_str = ", ".join(state['temp_organizers'])
             await update.message.reply_text(
-                f"Добавлено. Текущий список: {current_orgs_str}\n\n"
-                "Введите еще имена или нажмите «Готово / Далее».",
-                parse_mode='HTML'
+                f"✅ Вы добавлены в список.\n"
+                f"Текущий список: {current_list_str}\n\n"
+                "Добавьте еще кого-нибудь или нажмите «Готово / Далее».",
+                parse_mode="HTML",
+                reply_markup=get_organizers_keyboard(show_me_btn=False) # Скрываем кнопку
             )
+            return
+
+        # 3. Ручной ввод имени
+        if text:
+             # Обработка ручного ввода (текст, не являющийся кнопкой)
+             # Разбиваем по запятым, если пользователь ввел несколько имен
+             raw_names = [n.strip() for n in text.split(',')]
+             added_count = 0
+             for n in raw_names:
+                 if n:
+                     formatted_name = f"<code>{escape_html(n)}</code>"
+                     state['temp_organizers'].append(formatted_name)
+                     added_count += 1
+            
+             if added_count > 0:
+                 current_list_str = ", ".join(state['temp_organizers'])
+                 await update.message.reply_text(
+                    f"➕ Добавлено вручную: {added_count} имя(ен).\n"
+                    f"Текущий список: {current_list_str}\n\n"
+                    "Продолжайте ввод или нажмите «Готово / Далее».",
+                    parse_mode="HTML",
+                    reply_markup=get_organizers_keyboard(show_me_btn=(user_id not in state['organizer_ids']))
+                 )
+             else:
+                 await update.message.reply_text("Некорректное имя.")
         return
 
     # 5) Обработка ссылки для частного канала
@@ -1409,7 +1397,7 @@ async def end_giveaway(update: Update, context: ContextTypes.DEFAULT_TYPE):
     give = get_giveaway(gid)
     participants = get_participants(gid)
     if not participants:
-        await update.message.reply_text('ℹ️ В розыгрыше нет участников.')
+        await update.message.reply_text('ℹ️ В розыгрыше нет участников. Розыгрыш завершён.')
         mark_giveaway_finished(gid)
         return
 
@@ -1434,7 +1422,7 @@ async def end_giveaway(update: Update, context: ContextTypes.DEFAULT_TYPE):
             valid_users.append(p)
 
     if not valid_users:
-        await update.message.reply_text('ℹ️ Нет участников, соответствующих условиям на момент подведения итогов.')
+        await update.message.reply_text('ℹ️ Нет участников, соответствующих условиям на момент подведения итогов. Розыгрыш завершён.')
         mark_giveaway_finished(gid)
         return
 
