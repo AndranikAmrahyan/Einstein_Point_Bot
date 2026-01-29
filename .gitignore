@@ -10,11 +10,6 @@ env/
 venv*/
 ENV/
 
-# Database
-*.db
-*.sqlite
-*.sqlite3
-
 # Environment files
 .env
 .env.local
@@ -43,4 +38,5 @@ Thumbs.db
 # Build/compiled files
 build/
 dist/
+
 *.egg-info/
