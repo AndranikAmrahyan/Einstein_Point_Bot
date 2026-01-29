@@ -38,5 +38,4 @@ Thumbs.db
 # Build/compiled files
 build/
 dist/
-
 *.egg-info/
